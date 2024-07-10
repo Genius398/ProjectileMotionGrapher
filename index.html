@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projectile Motion Simulation</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 20px;
+        }
+        .simulation-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start; /* Adjust alignment as needed */
+            width: 100%;
+            max-width: 1000px; /* Adjust maximum width as needed */
+        }
+        .output-container {
+            flex: 1;
+            margin-left: 20px; /* Adjust spacing between elements */
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin-top: 20px; /* Adjust spacing between canvas and other elements */
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Projectile Motion Simulation</h2>
+
+        <div class="simulation-container">
+            <div>
+                <div>
+                    <label for="velocitySlider">Initial Velocity (m/s):</label>
+                    <input type="range" id="velocitySlider" name="velocitySlider" min="10" max="100" step="1" value="50">
+                    <output id="velocityValue">50</output>
+                </div>
+                
+        
+                <div>
+                    <label for="angleSlider">Launch Angle (degrees):</label>
+                    <input type="range" id="angleSlider" name="angleSlider" min="1" max="90" step="1" value="45">
+                    <output id="angleValue">45</output>
+                </div>
+            </div>
+
+            
+            <div class="output-container">
+                <p><strong>Range:</strong> <span id="rangeOutput"></span> m</p>
+                <p><strong>Height:</strong> <span id="heightOutput"></span> m</p>
+                <p><strong>Time of Flight:</strong> <span id="timeOutput"></span> s</p>
+            </div>
+        </div>
+        <canvas id="projectileChart"></canvas>
+    </div>
+
+    <script>
+        
+        function generateProjectileData(v0, angle) {
+            const g = 9.81;
+            const theta = angle * Math.PI / 180;
+            const t_max = 2 * v0 * Math.sin(theta) / g;
+            const num_points = 500;
+            const dt = t_max / num_points;
+            const data = [];
+
+            for (let i = 0; i <= num_points; i++) {
+                const t = i * dt;
+                const x = v0 * Math.cos(theta) * t;
+                const y = v0 * Math.sin(theta) * t - 0.5 * g * t * t;
+                if (y >= 0) {
+                    data.push({ x: x, y: y });
+                } else {
+                    break;
+                }
+            }
+            return data;
+        }
+
+        
+        let v0 = 50; 
+        let angle = 45; 
+        let projectileData = generateProjectileData(v0, angle);
+
+        
+        const ctx = document.getElementById('projectileChart').getContext('2d');
+        const projectileChart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Projectile Path',
+                    data: [],  
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    showLine: true,
+                    fill: false,
+                    pointRadius: 2
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: 'Horizontal Distance (m)'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Vertical Distance (m)'
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const x = context.parsed.x.toFixed(2);
+                                const y = context.parsed.y.toFixed(2);
+                                return `x: ${x} m, y: ${y} m`;
+                            }
+                        }
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                }
+            }
+        });
+
+        
+        function updateData() {
+            v0 = parseInt(document.getElementById('velocitySlider').value);
+            angle = parseInt(document.getElementById('angleSlider').value);
+            document.getElementById('velocityValue').textContent = v0;
+            document.getElementById('angleValue').textContent = angle;
+            
+            
+            projectileData = generateProjectileData(v0, angle);
+            console.log(projectileData)
+            
+            projectileChart.data.datasets[0].data = projectileData;
+            projectileChart.update();
+            console.log(projectileChart)
+            
+            const g = 9.81;
+            const theta = angle * Math.PI / 180;
+            const range = (v0 * v0 * Math.sin(2 * theta)) / g;
+            const height = (v0 * v0 * Math.sin(theta) * Math.sin(theta)) / (2 * g);
+            const timeOfFlight = (2 * v0 * Math.sin(theta)) / g;
+
+            document.getElementById('rangeOutput').textContent = range.toFixed(2);
+            document.getElementById('heightOutput').textContent = height.toFixed(2);
+            document.getElementById('timeOutput').textContent = timeOfFlight.toFixed(2);
+        }
+
+        updateData();
+
+        
+        document.getElementById('velocitySlider').addEventListener('input', updateData);
+        document.getElementById('angleSlider').addEventListener('input', updateData);
+    </script>
+</body>
+
+</html>
